@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+	<sub-flow name="uploadingFlatfile" doc:id="20b91975-32aa-4704-be9d-967a61c92859" >
+		<ee:transform doc:name="Transform Message" doc:id="25fde792-fca6-48c0-a896-3b98562e132c">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output multipart/form-data
+input payload multipart/form-data
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-payload value="#[payload.parts[0][1]]" doc:name="Set Payload" doc:id="9f4b5908-a5cc-43b1-9d89-6db0986b143c" />
+		<ee:transform doc:name="Transform Message" doc:id="e6c3defc-c62a-4d3f-a6d1-7f463188f3b1">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload replace "02,USD,/" with ("02,USD,03/")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="c7417866-88f0-4ff9-96f4-30eb0a3ff01d" name="uploadingFlatfileSub_Flow1" />
+		<flow-ref doc:name="Flow Reference" doc:id="657d61fe-20ac-4582-b675-98ce8efa0c9f" name="uploadingFlatfileSub_Flow2" />
+		<ee:transform doc:name="Transform Message" doc:id="6be007e1-5c78-4110-9e71-3634af97c7e7">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output text/plain
+---
+payload replace "/" with ("/
+")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<tracing:with-correlation-id doc:name="With CorrelationID" doc:id="06170844-6c01-4c5b-84c1-519fe3decbc8" correlationId="#[teast1234]">
+			<logger level="INFO" doc:name="Logger" doc:id="a1ae7525-1070-41a6-b1c9-51352f6cb02e" message="#[payload]" />
+		</tracing:with-correlation-id>
+		<file:write doc:id="f0dda804-1483-4b67-9519-6e037a948a69" doc:name="output00" path="C:\Users\bpandhawale\Desktop\Extra\Practice\Write-file\out_putfile.txt"/>
+	</sub-flow>
+	<sub-flow name="uploadingFlatfileSub_Flow1" doc:id="e3ece584-1dc6-4272-8902-afcee5eade80" >
+		<choice doc:name="Choice" doc:id="5c914c35-5493-49c1-aa5d-6b2891079a3c" >
+			<when expression='#[payload contains("16,357,10000,,,00000201934/16,395,10000,,,00000201934/")]'>
+				<ee:transform doc:name="Transform Message" doc:id="39c8868c-5c07-43a8-93bb-1a150700924e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[output text/plain
+---
+payload replace "16,357,10000,,,00000201934/16,395,10000,,,00000201934/" 
+with ("16,357,10000,,,00000201934/")]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<flow-ref doc:name="Flow Reference" doc:id="913b1364-85d9-4615-be13-a38ee8dc9618" name="uploadingFlatfileSub_Flow1"/>
+			</when>
+		</choice>
+	</sub-flow>
+	<sub-flow name="uploadingFlatfileSub_Flow2" doc:id="17db20e5-ff45-48f6-8252-941a3ae8e1d4" >
+		<choice doc:name="Choice" doc:id="d7e11d1b-3474-4634-b165-df6e66121068" >
+			<when expression='#[payload contains("16,631,10000,,,00000201934/16,981,10000,,,00000201934/")]'>
+				<ee:transform doc:name="Transform Message" doc:id="cb1e033b-70c9-42f8-863e-748305178675" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload replace "16,631,10000,,,00000201934/16,981,10000,,,00000201934/" with ("16,631,10000,,,00000201934/")]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<flow-ref doc:name="Flow Reference" doc:id="d8d8a43b-7ea8-4887-a989-da4eea1e6d9e" name="uploadingFlatfileSub_Flow2"/>
+			</when>
+		</choice>
+	</sub-flow>
+</mule>
