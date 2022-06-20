@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_e3000343_6511_427a_99d9_f04b10ee8316_Output_Variables_string = Any
+
