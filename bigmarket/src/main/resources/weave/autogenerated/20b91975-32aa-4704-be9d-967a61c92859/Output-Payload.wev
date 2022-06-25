@@ -1,4 +1,0 @@
-%dw 2.0
-
-type auto_20b91975_32aa_4704_be9d_967a61c92859_Output_Payload = String
-
