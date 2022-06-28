@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<sub-flow name="importstatementSub_Flow" doc:id="aa90cdc9-bed2-4f0e-a837-fcda023f36e9" >
+		<ee:transform doc:name="Flatfile to json" doc:id="973e0d38-9f00-4219-8992-4ed8ecfd202b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+input payload mutipart/form-data
+import remove from dw::core::Strings
+---
+payload.parts[0][1] remove "\r\n"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="0e8bcffa-5cf7-4901-88a1-e84bf21950fc" />
+		<ee:transform doc:name="String to Array" doc:id="e88af9fa-ad52-481b-83cc-d319326d0c95">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload splitBy "/ "]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Adding Status In Table" doc:id="4e79786e-6c23-47b7-9a9e-8fd188f6d187" name="addingStatusAndFilteringInput"/>
+		<flow-ref doc:name="To adding asOfDateModifier" doc:id="286c3d03-5cf9-4509-82d0-b57085be8dee" name="addingAsOfDate"/>
+		<logger level="INFO" doc:name="Logger" doc:id="8c68f590-14b7-48fa-9b23-c06e69194e9c" message="#[payload]" />
+		<file:read doc:name="Data to be Deleted" doc:id="b60562a1-46b4-45d4-a407-cb034c415eea" path="C:\Users\rahulsharma685\AnypointStudio\studio-workspace\bigmarketnew\src\main\resources\input\deleteData.json" config-ref="File_Config"/>
+		<foreach doc:name="For Each" doc:id="aeca7d11-f4b6-4d85-9c9d-d2df4e39846d" >
+			<set-variable value="#[payload.start]" doc:name="Starting statement" doc:id="4b978260-cdfd-452b-b280-ece4e374432b" variableName="startwith" />
+			<logger level="INFO" doc:name="Logger" doc:id="edb33653-f15e-4208-8329-60dd08cfd9bf" message="#[vars.startwith]"/>
+			<set-variable value="#[payload.end]" doc:name="Statement followed" doc:id="9e208a08-8e29-4f0e-9a04-23f46eae1ff4" variableName="delete" />
+			<set-payload value="#[vars.content]" doc:name="Setting Payload" doc:id="bb5e0545-6e63-46ca-9126-7542beba01db" />
+			<flow-ref doc:name="Deleting statement" doc:id="55c80c98-f343-436c-920a-4b09d52eca20" name="importstatementSub_Flow1"/>
+		</foreach>
+		<set-payload value="#[vars.content]" doc:name="Set Payload" doc:id="fec6614d-ea5e-4921-a8a7-611d1298a62b" />
+		<ee:transform doc:name="Transform Message" doc:id="3d1c1850-8cb8-4770-966f-ab2cd7948af2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload joinBy "/"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="File Exporting" doc:id="89141152-9e8c-404f-bacc-73dc98f686bb" name="exportingFile"/>
+	</sub-flow>
+	<sub-flow name="addingStatusAndFilteringInput" doc:id="aea27479-9def-4edf-8298-e994193dfdde" >
+		<set-variable value="#[payload]" doc:name="Saving Payload" doc:id="2bf806b6-3e6e-4eb4-9a27-1f61f3922aa9" variableName="content" />
+		<set-variable value="#[correlationId]" doc:name="Saving CorrelationId" doc:id="cfed75a0-bf6c-4ea7-8310-b18b52a994ee" variableName="coid" />
+		<db:insert doc:name="Adding Row" doc:id="bb98b4bb-d624-4015-8bdb-beed3f254209" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into eventmanagement(correlationid,status) values(:coid,'File imported')]]></db:sql>
+			<db:input-parameters><![CDATA[#[{coid: vars.coid}]]]></db:input-parameters>
+		</db:insert>
+		<set-payload value="#[vars.content]" doc:name="Setting Payload" doc:id="98796a93-21c7-47b1-8409-b953ccb8c7ee" />
+	</sub-flow>
+	<sub-flow name="addingAsOfDate" doc:id="e41aa339-47e7-41a7-adb9-11459cb783c5" >
+		<file:read doc:name="Data to be added" doc:id="7e5868a1-2e98-4c78-9673-2a874a869568" path="C:\Users\rahulsharma685\AnypointStudio\studio-workspace\bigmarketnew\src\main\resources\input\addData.json" config-ref="File_Config"/>
+		<foreach doc:name="For Each" doc:id="4b5f2cfa-07fb-4a20-a136-9b16a0e744af" >
+			<ee:transform doc:name="Adding as of DateModifier" doc:id="9e302004-e3c7-4e1a-a261-0250d746a4b3">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+import remove from dw::core::Strings
+var from= payload.from
+var to= payload.to
+---
+vars.content map(
+    $ replace from with to
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<set-variable value="#[payload]" doc:name="Saving Payload" doc:id="db9a36aa-1a61-43cd-8c56-e2c9e4b9a91e" variableName="content" />
+		</foreach>
+	</sub-flow>
+	<sub-flow name="importstatementSub_Flow1" doc:id="e05bc29a-249a-44cd-87f5-f7943bb66883" >
+		<ee:transform doc:name="Min index of starting statement" doc:id="1ef00f93-e0e1-4b3c-8f5d-087d7394a2c6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import * from dw::core::Strings
+import * from dw::core::Arrays
+---
+indexOf(payload, payload firstWith ((user, index) -> substring(user,0,6) == vars.startwith))]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Saving min variable" doc:id="91934630-61f8-4984-88ad-66219a1c327e" variableName="min" />
+		<set-payload value="#[vars.content]" doc:name="Setting Payload" doc:id="b226275c-9313-4f1f-9ed0-e9ef7aa9fe83" />
+		<ee:transform doc:name="Slicing the array which has deletions" doc:id="19a88116-fee0-4eac-b589-f39a3a9ef654" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import * from dw::core::Strings
+import * from dw::core::Arrays
+var size=sizeOf(payload)
+---
+payload map(
+    if(substring(payload[$$],0,6)==vars.startwith)(
+        values: slice(payload,$$,size)
+    )
+    else( exvalues:$)
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-payload value="#[payload.values[0]]" doc:name="Choosing data" doc:id="cb2b4176-4072-45b6-a06b-674faeab7451" />
+		<ee:transform doc:name="Filtering data" doc:id="0d9fb3e4-716e-4da2-832d-ecf1fba51528" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import * from dw::core::Strings
+import * from dw::core::Arrays
+---
+payload filter ((v,i) -> substring(payload[i],0,6)!=vars.delete)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Concatinating filtered payload to unfiltered input" doc:id="d688ab7e-e0ee-43bf-83c6-ec2fd2ccfcf2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import * from dw::core::Strings
+import * from dw::core::Arrays
+---
+slice(vars.content,0,vars.min)++ payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Saving Payload" doc:id="083d683b-f0bc-447a-b94b-13674b6681d9" variableName="content" />
+		<set-payload value="#[payload]" doc:name="Setting Payload" doc:id="c179aaad-f65e-4477-be46-51453022674e" />
+	</sub-flow>
+	<flow name="importstatementFlow" doc:id="e81f30ee-6da6-46aa-a084-c76bb68555f6" >
+		<jms:listener doc:name="Subscribing Message" doc:id="77fc660c-bd79-4beb-9a73-4e42170db615" config-ref="JMS_Config" destination="Q.Test" inboundContentType="application/json">
+			<jms:consumer-type >
+				<jms:queue-consumer />
+			</jms:consumer-type>
+			<jms:response outboundContentType="application/json" correlationId="#[payload.coid]">
+			</jms:response>
+		</jms:listener>
+		<set-variable value="#[payload.coid]" doc:name="Saving CorrelationId" doc:id="ecbc2bbc-d377-4f4a-964d-8ddc4a5fec1d" variableName="coid"/>
+		<logger level="INFO" doc:name="Logger" doc:id="9c6d892a-91ab-4b99-afea-d7ca7f3769a8" message="#[vars.coid]"/>
+		<flow-ref doc:name="Sending emails to Suppliers" doc:id="5d1dc12d-6bcd-43c8-a4d2-8d80ad7d0038" name="send-emailsSub_Flow"/>
+	</flow>
+	<sub-flow name="exportingFile" doc:id="c4bb8a28-cb6e-46d3-a8e0-fb8c8d842f35">
+		<set-variable value="#[payload]" doc:name="Setting String" doc:id="df92420d-e14b-4788-89a8-b7e1c9b3e93a" variableName="content" />
+		<db:insert doc:name="Adding Row" doc:id="94198645-1c81-4eed-8d59-3f54a2e47af7" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into eventmanagement(correlationid,status) values(:coid,'File transformed')]]></db:sql>
+			<db:input-parameters><![CDATA[#[{coid: vars.coid}]]]></db:input-parameters>
+		</db:insert>
+		<set-payload value="#[vars.content]" doc:name="Payload as String" doc:id="395c5ab2-9185-48ab-861c-51e0309a611d" />
+		<validation:is-not-null doc:name="Is not null" doc:id="1237bb42-9c72-4b3d-ba03-c83c21593857" config-ref="Validation_Config" value="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="ba76ec00-4759-43f4-867d-b9f61ebfc4db" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output text/plain
+---
+payload replace "/" with "/\n"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Exporting File" doc:id="dffb3b93-fba4-499e-8c5a-03d899b4e1e8" path="C:\Users\rahulsharma685\AnypointStudio\studio-workspace\bigmarketnew\src\main\resources\output\MDFC.curr.out.modified.20220617.095211.txt" />
+		<db:insert doc:name="Adding Row" doc:id="e48ea055-de9d-46bd-9065-fe802fbdfb9b" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into eventmanagement(correlationid,status) values(:coid,'File exported')]]></db:sql>
+			<db:input-parameters><![CDATA[#[{coid: vars.coid}]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="Logger" doc:id="6e4f6b95-41bc-44b6-a093-afa37245af13" message="#[vars.content]"/>
+		<jms:publish doc:name="Publishing a message to start report" doc:id="727782e3-8435-4585-b443-ecfbec6f453f" config-ref="JMS_Config" destination="Q.Test" >
+			<jms:message outboundContentType="application/json" correlationId="#[vars.coid]">
+				<jms:body ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	coid: vars.coid,
+ message: "Report can be started"
+}]]]></jms:body>
+			</jms:message>
+		</jms:publish>
+	</sub-flow>
+</mule>

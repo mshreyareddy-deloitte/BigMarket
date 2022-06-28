@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+    <flow name="bigMarket-main">
+        <http:listener config-ref="HTTP_Listener_config" path="${secure::http.routerpath}">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="bigMarket-config" doc:id="ae4e645a-d9e9-4004-8185-4a6e18466c21" />
+        <error-handler ref="global-error-handler"/>
+    </flow>
+    <flow name="bigMarket-console">
+        <http:listener config-ref="HTTP_Listener_config" path="${secure::http.consolepath}">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="bigMarket-config" />
+        <error-handler ref="global-error-handler"/>
+    </flow>
+    <flow name="post:\bankstatement:multipart\form-data:bigMarket-config">
+		<flow-ref doc:name="To transforming statement and sending mails" doc:id="ea7b8e68-a8b9-4a8c-8f04-21ae24b72667" name="importstatementSub_Flow" />
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9f2c0821-45c2-493f-b3c0-5214a76a117c" type="VALIDATION:NULL">
+				<logger level="INFO" doc:name="Logger" doc:id="1c283ac0-666a-4f99-894b-0cc911a2ade3" message='"Account Statement not transformed"'/>
+			</on-error-continue>
+        </error-handler>
+    </flow>
+    <flow name="post:\sendingemails:application\json:bigMarket-config">
+		<ee:transform doc:name="Transform Message" doc:id="3a858374-888e-46c3-8178-356b1ce5fcab" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"Emails sent"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    </flow>
+</mule>

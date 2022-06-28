@@ -1,0 +1,23 @@
+http:
+    port: "![Qy7KPbTJu8Q=]"
+    routerpath: "![bz2385rqd3Q=]"
+    consolepath: "![g4BIQInX6WJ9zXSxt+h2Ww==]"
+db:
+    driverclassname: "![rwSmwGKZuyqaLVAy+yd06NYjwNbd1Of6]"
+    password: "![sC5CItOqaS6GLgEiUJ6Ifg==]"
+    user: "![pFhj1VvdJtAmQx6AnLrx4Q==]"
+    url: "![5b5aQDkcgOdYB6m00zrFx05Q9zcgylTiXZWMIeKn4BNgdztwdSofKiy2GyfeASm9]"
+
+jms:
+    username: "![VxMHvVI62yE=]"
+    password: "![VxMHvVI62yE=]"
+    brokerurl: "![w69J6s861D+3owJe5pl8+h9MKnphevl5]"
+
+email:
+    host: "![vIzpMFogQ55ovHO98u8mfg==]"
+    port: "![bq4emPyJKEI=]"
+    user: "![DbW8+KFKOUR14kwJdKDSWDh/SNWuAwkJZlTWExUwaaQ=]"
+    password: "![PssIRBAJExF8q/TT7LYY44Z9diVmi+oF]"
+
+file:
+    directory: "![m4mwU4KN5P9K3EYx3UEsHS8yn1QVOzdSH6n7K+gsI9sfXcr+kvZ8OYbVdmYGhj158a1vZzqEuCHioktrhM3iUKXk5MQnD5OD]"

@@ -1,0 +1,31 @@
+{
+  "headers": {
+    "client_id": "asjdjadjkb",
+    "client_secret": "ajdjadjb",
+    "user-agent": "PostmanRuntime/7.29.0",
+    "accept": "*/*",
+    "cache-control": "no-cache",
+    "postman-token": "49af1f8e-3bf8-43c4-a862-b93f41557382",
+    "host": "localhost:8081",
+    "accept-encoding": "gzip, deflate, br",
+    "connection": "keep-alive",
+    "content-type": "multipart/form-data; boundary=--------------------------287303006763664428120213",
+    "content-length": "744"
+  },
+  "clientCertificate": null,
+  "method": "POST",
+  "scheme": "http",
+  "queryParams": {},
+  "requestUri": "/api/bankstatement",
+  "queryString": "",
+  "version": "HTTP/1.1",
+  "maskedRequestPath": "/bankstatement",
+  "listenerPath": "/api/*",
+  "localAddress": "/127.0.0.1:8081",
+  "relativePath": "/api/bankstatement",
+  "uriParams": {},
+  "rawRequestUri": "/api/bankstatement",
+  "rawRequestPath": "/api/bankstatement",
+  "remoteAddress": "/127.0.0.1:65231",
+  "requestPath": "/api/bankstatement"
+}

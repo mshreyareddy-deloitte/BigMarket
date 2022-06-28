@@ -1,0 +1,55 @@
+#%RAML 1.0
+title: BigMarket
+description: API Specification for BigMarket
+version: 1.0
+traits:
+  errors: !include /traits/trait.raml
+
+protocols:
+  - HTTP
+  - HTTPS
+
+types:
+  accountStatement: !include /dataTypes/accountStatement.raml
+  supplierData: !include /dataTypes/supplierData.raml
+  report: !include /dataTypes/report.raml
+  
+  #Flatfile:
+    #type: file
+    #fileTypes: ['*/*']
+  #File: Flatfile
+
+/bankstatement:
+  is: [errors]
+  post:  
+    displayName: upload bankdetails
+    description: bank statement details to be inserted into database
+    body:
+      multipart/form-data:
+          properties:
+            file:
+              description: Uploading flatfile as input   
+              type: file         
+    responses:
+      200:
+        body:
+          application/json:
+            type: accountStatement
+
+              
+/sendingemails:
+  is: [errors]
+  post:
+    displayName: send emails
+    description: cost discrepancy details which needs manual intervention must be notified to the Buyer Team in the form of a XLSX report.
+    body:
+      application/json:
+        type: supplierData
+    responses:
+      201:
+        body:
+          application/json:
+            type: report
+            
+  
+  

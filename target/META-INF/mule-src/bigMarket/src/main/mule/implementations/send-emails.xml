@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<sub-flow name="send-emailsSub_Flow" doc:id="2b93d73f-ca9d-4876-ae95-1ad943b9e284" >
+		<db:select doc:name="SupplierCost" doc:id="4aa5ee31-cd6f-4c9c-ba22-15e08386fdb5" config-ref="Database_Config" >
+			<db:sql ><![CDATA[select * from suppliercost]]></db:sql>
+		</db:select>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="c60190a6-0e94-436b-bf78-71bfc4b28e18" >
+			<set-variable value='#[payload.supplier_name ++ " " ++ payload.invoice_number]' doc:name="Set Variable" doc:id="bc13eea8-e1b1-4b75-8a93-d0757aef2f7c" variableName="primaryKey"/>
+			<ee:transform doc:name="Transform Message" doc:id="819e6450-9e50-48a0-b0f0-087e5a73956f">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/csv
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+			<try doc:name="Try" doc:id="976048b4-01e4-47d8-9122-846d49153c48" >
+				<email:send doc:name="Sending email" doc:id="61cdbdca-0857-411b-986c-9bf57b930718" config-ref="Email_SMTP" fromAddress="northern27lights27@gmail.com" subject="#[vars.primaryKey]">
+						<email:to-addresses>
+						<email:to-address value="northern27lights27@gmail.com" />
+						</email:to-addresses>
+						<email:body contentType="text/plain">
+							<email:content><![CDATA[#["There is cost discrepancy in your data. Please change it"]]]></email:content>
+						</email:body>
+						<email:attachments><![CDATA[#[{
+	"attachment.csv": payload
+}]]]></email:attachments>
+					</email:send>
+				<logger level="INFO" doc:name="Logger" doc:id="02542b85-bb62-4dee-86a7-7d299d4f4ffc" message='"SUCCESS"'/>
+				<db:insert doc:name="Inserting status" doc:id="dd116371-e0ce-4a1f-b988-92f46917bff2" config-ref="Database_Config">
+					<db:sql ><![CDATA[insert into emailstatus(primarykey,status)values(:pk,'Email sent')]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	pk: vars.primaryKey
+}]]]></db:input-parameters>
+				</db:insert>
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="aa923543-a9cf-49f0-8508-cad7eec03b6c" type="ANY" >
+						<logger level="INFO" doc:name="Logger" doc:id="5c1a6d5c-c9b8-453b-a11f-cf2be158b522" message='"FAILURE"' />
+						<db:insert doc:name="Inserting status" doc:id="0410342e-e0ab-4112-a070-6844a3e3781d" config-ref="Database_Config" >
+							<db:sql ><![CDATA[insert into emailstatus(primarykey,status)values(:pk,'Email sending failed')]]></db:sql>
+							<db:input-parameters ><![CDATA[#[{
+	pk: vars.primaryKey
+}]]]></db:input-parameters>
+						</db:insert>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</parallel-foreach>
+	</sub-flow>
+</mule>
