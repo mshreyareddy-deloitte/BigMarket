@@ -1,7 +1,0 @@
-%dw 2.0
-
-type auto_aea27479_9def_4edf_8298_e994193dfdde_Input_Payload = {
-  file: String, 
-  _?: Any
-}
-
